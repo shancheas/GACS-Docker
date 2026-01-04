@@ -5,6 +5,10 @@ services:
     image: mongo:4.4
     container_name: genieacs-mongodb
     restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-adminpassword}
+      - MONGO_INITDB_DATABASE=genieacs
     ports:
       - "27017:27017"
     volumes:
@@ -14,7 +18,7 @@ services:
     networks:
       - genieacs-network
     healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongo", "-u", "${MONGO_ROOT_USER:-admin}", "-p", "${MONGO_ROOT_PASSWORD:-adminpassword}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -111,7 +111,9 @@ cp env.example .env
 
 | Variable                          | Default                              | Description                                              |
 | --------------------------------- | ------------------------------------ | -------------------------------------------------------- |
-| `GENIEACS_MONGODB_CONNECTION_URL` | `mongodb://mongodb:27017/genieacs`   | MongoDB connection string                                |
+| `MONGO_ROOT_USER`                 | `admin`                              | MongoDB root username                                    |
+| `MONGO_ROOT_PASSWORD`             | `adminpassword`                      | MongoDB root password (CHANGE IN PRODUCTION!)            |
+| `GENIEACS_MONGODB_CONNECTION_URL` | (auto-generated with credentials)    | MongoDB connection string                                |
 | `GENIEACS_UI_JWT_SECRET`          | `changeme-to-a-secure-random-string` | JWT secret for UI authentication (change in production!) |
 | `GENIEACS_CWMP_INTERFACE`         | `0.0.0.0`                            | CWMP interface binding                                   |
 | `GENIEACS_NBI_INTERFACE`          | `0.0.0.0`                            | NBI interface binding                                    |
@@ -120,6 +122,15 @@ cp env.example .env
 | `GENIEACS_FS_HOSTNAME`            | (empty)                              | Hostname for file server URLs                            |
 | `DATA_DIR`                        | `./data`                             | Directory for logs and extensions                        |
 | `TZ`                              | `Asia/Jakarta`                       | Timezone                                                 |
+
+### MongoDB Authentication
+
+MongoDB is configured with authentication enabled by default. The default credentials are:
+
+- **Username**: `admin`
+- **Password**: `adminpassword`
+
+⚠️ **IMPORTANT**: Change these credentials in production by setting `MONGO_ROOT_USER` and `MONGO_ROOT_PASSWORD` in your `.env` file.
 
 ## Volumes
 
@@ -170,13 +181,15 @@ cat /var/log/genieacs/genieacs-ui.log
 Ensure MongoDB is running and accessible:
 
 ```bash
-docker exec -it genieacs-mongodb mongo --eval "db.adminCommand('ping')"
+# With default credentials
+docker exec -it genieacs-mongodb mongo -u admin -p adminpassword --authenticationDatabase admin --eval "db.adminCommand('ping')"
 ```
 
 ### Verify database import
 
 ```bash
-docker exec -it genieacs-mongodb mongo genieacs --eval "db.getCollectionNames()"
+# With default credentials
+docker exec -it genieacs-mongodb mongo -u admin -p adminpassword --authenticationDatabase admin genieacs --eval "db.getCollectionNames()"
 ```
 
 ### Rebuild containers after changes
