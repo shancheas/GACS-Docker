@@ -22,7 +22,7 @@ EOF
 echo "=== Importing data from parameters folder ==="
 
 # Path to parameters folder (mounted in docker-compose)
-PARAMS_DIR="/docker-entrypoint-initdb.d/parameters"
+PARAMS_DIR="/parameters"
 
 # Import BSON files if they exist
 if [ -d "$PARAMS_DIR" ]; then

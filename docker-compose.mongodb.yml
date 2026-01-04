@@ -10,7 +10,7 @@ services:
     volumes:
       - mongodb_data:/data/db
       - ./db-init:/docker-entrypoint-initdb.d:ro
-      - ./parameters:/docker-entrypoint-initdb.d/parameters:ro
+      - ./parameters:/parameters:ro
     networks:
       - genieacs-network
     healthcheck:
