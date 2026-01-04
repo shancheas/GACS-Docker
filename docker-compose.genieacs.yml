@@ -1,0 +1,100 @@
+version: "3.8"
+
+services:
+  genieacs:
+    build: .
+    container_name: genieacs-server
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+    # Environment variables (can be overridden in .env file)
+    environment:
+      - GENIEACS_MONGODB_CONNECTION_URL=${GENIEACS_MONGODB_CONNECTION_URL:-mongodb://mongodb:27017/genieacs}
+      - GENIEACS_CWMP_INTERFACE=${GENIEACS_CWMP_INTERFACE:-0.0.0.0}
+      - GENIEACS_NBI_INTERFACE=${GENIEACS_NBI_INTERFACE:-0.0.0.0}
+      - GENIEACS_FS_INTERFACE=${GENIEACS_FS_INTERFACE:-0.0.0.0}
+      - GENIEACS_UI_INTERFACE=${GENIEACS_UI_INTERFACE:-0.0.0.0}
+      - GENIEACS_FS_HOSTNAME=${GENIEACS_FS_HOSTNAME:-}
+      - GENIEACS_UI_JWT_SECRET=${GENIEACS_UI_JWT_SECRET:-changeme-to-a-secure-random-string}
+      - TZ=${TZ:-Asia/Jakarta}
+
+    # Volumes for persistent data
+    volumes:
+      - genieacs-logs:/var/log/genieacs
+      - genieacs-config:/opt/genieacs/config
+      # Optional: Mount custom extensions
+      - ${GENIEACS_EXT_HOST_DIR:-./ext}:/opt/genieacs/ext
+
+    # Exposed ports
+    ports:
+      - "7547:7547" # CWMP (TR-069)
+      - "7557:7557" # NBI (North Bound Interface)
+      - "7567:7567" # File Server
+      - "3000:3000" # Web UI
+
+    # Connect to the same network as MongoDB
+    networks:
+      - genieacs-network
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    # Resource limits (optional, adjust as needed)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+
+  # MongoDB service
+  mongodb:
+    image: mongo:4.4
+    container_name: genieacs-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+      - ./parameters:/docker-entrypoint-initdb.d/parameters:ro
+    networks:
+      - genieacs-network
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  genieacs-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DATA_DIR:-./data}/logs
+
+  genieacs-config:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./config
+
+  mongodb_data:
+    driver: local
+
+networks:
+  genieacs-network:
+    name: genieacs-network
+    driver: bridge

@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:4.4
+    container_name: genieacs-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+      - ./parameters:/docker-entrypoint-initdb.d/parameters:ro
+    networks:
+      - genieacs-network
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  genieacs-network:
+    name: genieacs-network
+    driver: bridge
